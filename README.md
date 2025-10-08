@@ -1,0 +1,1 @@
+Приложение визитня карточка автоэлектрика.<img width="1024" height="1024" alt="ChatGPT Image 8 окт  2025 г , 18_16_41" src="https://github.com/user-attachments/assets/91578f39-6ce1-4d90-9e6a-92263994ffa8" />
