@@ -1,7 +1,9 @@
 package com.android.autovolt
 
+import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
@@ -14,14 +16,21 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var webView: WebView
 
-    private val requestPermissionLauncher =
+    private val requestNotificationPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
             if (isGranted) {
-                // Permission is granted. Start the foreground service.
                 startForegroundService()
             } else {
-                // Explain to the user that the feature is unavailable because the
-                // permissions were denied.
+                // Handle notification permission denied
+            }
+        }
+
+    private val requestCallPhonePermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
+            if (isGranted) {
+                // Permission granted, try to make the call again if necessary
+            } else {
+                // Handle CALL_PHONE permission denied
             }
         }
 
@@ -31,13 +40,30 @@ class MainActivity : AppCompatActivity() {
 
         webView = findViewById(R.id.webView)
 
-        // Enable JavaScript (if needed by the website)
         webView.settings.javaScriptEnabled = true
 
-        // Set a WebViewClient to open links within the app
-        webView.webViewClient = WebViewClient()
+        webView.webViewClient = object : WebViewClient() {
+            override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
+                if (url != null && url.startsWith("tel:")) {
+                    // Handle tel: links
+                    if (ContextCompat.checkSelfPermission(
+                            this@MainActivity,
+                            Manifest.permission.CALL_PHONE
+                        ) == PackageManager.PERMISSION_GRANTED
+                    ) {
+                        val intent = Intent(Intent.ACTION_CALL, Uri.parse(url))
+                        startActivity(intent)
+                    } else {
+                        // Request CALL_PHONE permission if not granted
+                        requestCallPhonePermissionLauncher.launch(Manifest.permission.CALL_PHONE)
+                    }
+                    return true
+                }
+                // For other URLs, use the default behavior
+                return super.shouldOverrideUrlLoading(view, url)
+            }
+        }
 
-        // Load the URL
         webView.loadUrl("https://autovolt.duckdns.org")
 
         requestNotificationPermission()
@@ -47,17 +73,14 @@ class MainActivity : AppCompatActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(
                     this,
-                    android.Manifest.permission.POST_NOTIFICATIONS
+                    Manifest.permission.POST_NOTIFICATIONS
                 ) == PackageManager.PERMISSION_GRANTED
             ) {
-                // Permission is already granted. Start the foreground service.
                 startForegroundService()
             } else {
-                // Request permission
-                requestPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                requestNotificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
             }
         } else {
-            // For older Android versions, permission is granted at install time.
             startForegroundService()
         }
     }

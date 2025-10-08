@@ -49,7 +49,7 @@ class BackgroundService : Service() {
         val serviceChannel = NotificationChannel(
             channelId,
             "Foreground Service Channel",
-            NotificationManager.IMPORTANCE_DEFAULT
+            NotificationManager.IMPORTANCE_LOW // Изменено на IMPORTANCE_LOW
         )
         val manager = getSystemService(NotificationManager::class.java)
         manager.createNotificationChannel(serviceChannel)
